@@ -12,6 +12,7 @@ int main(void) {
 		puts("Error!");
 		return res;
 	}
+	res = 0;
 
 	char* argv[10];
 
@@ -30,11 +31,11 @@ int main(void) {
 	buf[n] = '\0';
 	argv[m] = 0;
 
-
+/*
 	unsigned i;
 	for(i = 0; i < m; ++i)
 		printf("'%s'\n", argv[i]);
-
+*/
 
 	int pipefd[2];
 	pid_t pid;
@@ -55,17 +56,17 @@ int main(void) {
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[0]);
 		close(pipefd[1]);
-		execvp(buf, argv);
+		return execvp(buf, argv);
 	} else {
 		close(pipefd[1]);
-		wait(0);
+		wait(&res);
 		char output[256];
 		int n;
 		while((n = read(pipefd[0], output, sizeof(output) - 1)) > 0) {
 			output[n] = '\0';
 			printf("%s", output);
 		}
-		puts("");
+		printf("result: %d\n", res);
 	}
 
 	return res;
