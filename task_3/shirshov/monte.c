@@ -108,7 +108,7 @@ int main(void) {
             r += (float)t / (float)info.n;
         }
         r *= info.s;
-        r /= 10;
+        r /= n;
 
         clock_t end = clock();
         float secs = (float)(end - start) / (float)CLOCKS_PER_SEC;
