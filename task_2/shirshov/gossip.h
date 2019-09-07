@@ -30,7 +30,6 @@ int gossip_write(Gossip* g, void* ptr, size_t sz) {
         p += res;
         size -= res;
     } while(size > 0);
-    gossip_sync(g);
     return 0;
 }
 
@@ -42,7 +41,6 @@ int gossip_read(Gossip* g, void* ptr, size_t sz) {
         p += res;
         size -= res;
     } while(size > 0);
-    gossip_sync(g);
     return 0;
 }
 
