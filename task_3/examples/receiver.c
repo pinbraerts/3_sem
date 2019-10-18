@@ -25,7 +25,6 @@ int main()
         perror("msgget");
         exit(1);
     }
-
     
     if (msgrcv(msqid, &rbuf, MSG_SIZE, 1, 0) < 0) {
         perror("msgrcv");
