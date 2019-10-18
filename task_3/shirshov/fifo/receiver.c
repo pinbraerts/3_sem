@@ -1,36 +1,39 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-
-#define NAME "/tmp/fifo.fifo"
-#define SIZE 256
+#include "../utils.h"
 
 int main() {
-    char input[SIZE];
-    if(mkfifo(NAME, 0666) == -1) {
-        perror("mkfifo() ");
-        return -1;
-    }
+    CHECK(mkfifo(NAME, 0666) == -1);
 
     printf("Server channel: %s\n", NAME);
-    int fd = open(NAME, O_RDONLY);
 
-    if(fd == -1) {
-        perror("open() ");
-        return -2;
+    int fd;
+    CHECK(fd = open(NAME, O_RDONLY));
+
+    size_t n;
+    ssize_t m;
+    CHECK(m = read(fd, &n, sizeof(size_t)));
+
+    printf("Total amount of bytes: %lu\n", n);
+
+    char* base = (char*)malloc(n);
+    if(base == NULL) {
+        perror("malloc(n)");
+        return 1;
     }
+    char* input = base;
 
-    ssize_t n;
-    while((n = read(fd, input, SIZE)) > 0) {
-        printf("Server received: '");
-        fwrite(input, 1, n, stdout);
+    while((m = read(fd, input, n)) > 0 && n > m) {
+        printf("Server received %ld bytes: '", m);
+        fwrite(input, 1, m, stdout);
         puts("'");
+        input += m;
+        n -= m;
     }
 
-    close(fd);
-    remove(NAME);
+    free(base);
+
+    CHECK(m);
+    CHECK(close(fd));
+    CHECK(remove(NAME));
 
     return 0;
 }

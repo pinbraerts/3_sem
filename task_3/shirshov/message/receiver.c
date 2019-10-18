@@ -1,15 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
 #include <sys/msg.h>
 
-#define CHECK(...) do { if(( __VA_ARGS__ ) == -1) { perror(__FILE__ " " #__VA_ARGS__ " "); return -1; } } while(0)
-#define NAME "/tmp/fifo.fifo"
-#define SIZE 256
+#include "../utils.h"
 
 typedef struct {
     int mtype;
@@ -26,7 +17,7 @@ int main() {
 
     ssize_t n;
     while((n = msgrcv(msqid, &message, SIZE, 0, 0)) > 0) {
-        printf("Server received: '");
+        printf("Server received %ld bytes: '", n);
         fwrite(message.mtext, 1, n, stdout);
         puts("'");
     }
