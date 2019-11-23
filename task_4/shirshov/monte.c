@@ -23,14 +23,14 @@ typedef struct {
     float s;
 } FunctionInfo;
 
-float frand() {
-    return (float)rand() / (float)INT_MAX;
+float frand(unsigned* seed) {
+    return (float)rand_r(seed) / (float)INT_MAX;
 }
 
-Point fi_next_random(FunctionInfo* info) {
+Point fi_next_random(FunctionInfo* info, unsigned* seed) {
     Point res;
-    res.x = info->left_down.x + info->size.x * frand();
-    res.y = info->left_down.y + info->size.y * frand();
+    res.x = info->left_down.x + info->size.x * frand(seed);
+    res.y = info->left_down.y + info->size.y * frand(seed);
     return res;
 }
 
@@ -40,10 +40,11 @@ int fi_check(FunctionInfo* info, Point p) {
 
 void* routine(void* arg) {
     FunctionInfo* info = (FunctionInfo*)arg;
+    unsigned seed = time(NULL);
     
     size_t i, res = 0;
     for(i = 0; i < info->n; ++i) {
-        Point p = fi_next_random(info);
+        Point p = fi_next_random(info, &seed);
         if(fi_check(info, p)) {
             ++res;
         }
@@ -66,8 +67,9 @@ int circle(Point p, void* ptr) {
     return r2 < info->r2;
 }
 
-int main(void) {
-    srand(time(NULL));
+int main(int argc, char** argv) {
+    size_t max_number_of_threads = (size_t)atoi(argv[1]);
+    size_t number_of_dots = (size_t)atoi(argv[2]);
 
     CircleInfo c;
     c.o.x = 0;
@@ -89,12 +91,14 @@ int main(void) {
     pthread_attr_t tattr;
     pthread_attr_init(&tattr); // default attributes
 
-    pthread_t threads[10000];
+    pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t) * max_number_of_threads);
 
     size_t n;
-    for(n = 1; n < 500; n += 10) {
+    for(n = 1; n < max_number_of_threads; n *= 2) {
+        //if(n == 11) n = 10;
+
         clock_t start = clock();
-        info.n = 10000000 / n;
+        info.n = number_of_dots / n;
 
         size_t i;
         for(i = 0; i < n; ++i) {
@@ -113,7 +117,14 @@ int main(void) {
         clock_t end = clock();
         float secs = (float)(end - start) / (float)CLOCKS_PER_SEC;
 
-        printf("%lu: %f\n", n, secs);
+        printf(
+            // "Real area: %f\n"
+            // "Computed area: %f\n"
+            "Number of threads: %lu\n"
+            "Time %f sec\n\n",
+            // c.s, r,
+            n, secs
+        );
     }
 
     return 0;

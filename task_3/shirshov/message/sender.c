@@ -1,15 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/sendfile.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
 #include <sys/msg.h>
 
-#define CHECK(...) do { if(( __VA_ARGS__ ) == -1) { perror(__FILE__ " " #__VA_ARGS__ " "); return -1; } } while(0)
-#define NAME "/tmp/fifo.fifo"
-#define SIZE 256
+#include "../utils.h"
 
 typedef struct {
     int mtype;
@@ -26,7 +17,7 @@ int main(int argc, char** argv) {
 
     ssize_t n;
     int fd = open(argv[1], O_RDONLY);
-    while((n = write(fd, message.mtext, SIZE)) > 0) {
+    while((n = read(fd, message.mtext, SIZE)) > 0) {
         if(msgsnd(msqid, &message, SIZE, 0) == -1) {
             perror("msgsnd() ");
             break;
