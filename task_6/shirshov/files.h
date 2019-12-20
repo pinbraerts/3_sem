@@ -208,10 +208,10 @@ int read_all(int fd, void* buf, size_t sz) {
     return n;
 }
 
-int write_all(int fd, void* buf, size_t sz) {
+int write_all(int fd, const void* buf, size_t sz) {
     size_t m = sz;
     ssize_t n;
-    char* b = (char*)buf;
+    const char* b = (const char*)buf;
     while((n = write(fd, b, m)) > 0 && n < m) {
         m -= n;
         b += n;
