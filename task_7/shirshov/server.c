@@ -1,10 +1,34 @@
 #include "includes.h"
 #include "api.h"
 
+void* routine(void* ptr) {
+    my_session_t* s = (my_session_t*)ptr;
+    for(;;) {
+        char buf[1024];
+        ssize_t m = read(s->tx, buf, sizeof(buf));
+        if(m > 0) {
+            printf("REQUEST %s\n", buf);
+            int file = open(buf, O_RDONLY);
+            struct stat st;
+            CHECK(fstat(file, &st));
+            sendfile(s->fx, file, 0, st.st_size);
+            break;
+        }
+        else if(errno == EAGAIN)
+            continue;
+        else {
+            perror("read(i, buf, sizeof(buf)");
+            exit(EXIT_FAILURE);
+        }
+    }
+    pthread_exit(NULL);
+    return NULL;
+}
+
 int main(int argc, char** argv) {
     int cmd_fifo;
 
-    CHECK(mkfifo(argv[1], 0666 | IPC_CREAT));
+    CHECK(mkfifo(argv[1], 0666));
     CHECK(cmd_fifo = open(argv[1], O_RDWR | O_NONBLOCK));
 
     struct timeval tv;
@@ -81,31 +105,13 @@ int main(int argc, char** argv) {
         
         Vector_foreach(my_session_t, sessions, s) {
             if(FD_ISSET(s->tx, &fds)) {
-                for(;;) {
-                    char buf[1024];
-                    ssize_t m = read(s->tx, buf, sizeof(buf));
-                    if(m > 0) {
-                        printf("REQUEST %s\n", buf);
-                        int file = open(buf, O_RDONLY);
-                        struct stat st;
-                        CHECK(fstat(file, &st));
-                        sendfile(s->fx, file, 0, st.st_size);
-                        break;
-                    }
-                    else if(m == 0) { // close this client
-                        puts("DETACH");
-                        close(s->tx);
-                        close(s->fx);
-                        *Vector_back_new(int, to_remove) = s - Vector_data(my_session_t, sessions);
-                        break;
-                    }
-                    else if(errno == EAGAIN)
-                        continue;
-                    else {
-                        perror("read(i, buf, sizeof(buf)");
-                        exit(EXIT_FAILURE);
-                    }
-                }
+                pthread_attr_t attr;
+                pthread_attr_init(&attr);
+
+                pthread_t thread;
+                pthread_create(&thread, &attr, routine, s);
+
+                pthread_attr_destroy(&attr);
             }
         }
 
