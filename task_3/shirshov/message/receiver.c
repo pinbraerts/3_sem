@@ -11,7 +11,7 @@ int main() {
     Message message;
     int msqid;
     key_t key;
-    CHECK(key = ftok("sender.c", 0));
+    CHECK(key = ftok("server.c", 0));
 
     CHECK(msqid = msgget(key, 0644));
 

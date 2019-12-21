@@ -2,9 +2,9 @@
 #include "api.h"
 
 int main(int argc, char** argv) {
-    int fd1;
-    CHECK(fd1 = open(argv[1], O_WRONLY | O_NONBLOCK));
-    
+    int cmd_fifo;
+    CHECK(cmd_fifo = open(argv[1], O_WRONLY));
+
     char* tx_name = argv[2];
     char* fx_name = argv[3];
 
@@ -12,23 +12,25 @@ int main(int argc, char** argv) {
     CHECK(mkfifo(tx_name, 0666));
     CHECK(mkfifo(fx_name, 0666));
     
-    my_request_t req;
-    req.size1 = strlen(tx_name) + 1;
-    req.size2 = strlen(fx_name) + 1;
+    my_msg_t msg;
+    msg.size1 = strlen(tx_name) + 1;
+    msg.size2 = strlen(fx_name) + 1;
 
-    puts("request");
-    CHECK(write(fd1, &req, sizeof(req)));
-    CHECK(write(fd1, tx_name, req.size1));
-    CHECK(write(fd1, fx_name, req.size2));
-    CHECK(close(fd1));
+    CHECK(write(cmd_fifo, &msg, sizeof(my_msg_t)));
+    CHECK(write(cmd_fifo, tx_name, msg.size1));
+    CHECK(write(cmd_fifo, fx_name, msg.size2));
+    puts("sent request");
 
-    puts("open fx");
+    int tx;
+    CHECK(tx = open(tx_name, O_WRONLY));
+    puts("opened tx");
+
+    char c;
     int fx;
     CHECK(fx = open(fx_name, O_RDONLY));
+    puts("opened fx");
+    CHECK(close(cmd_fifo));
 
-    puts("open fifo");
-    int tx;
-    CHECK(tx = open(tx_name, O_WRONLY | O_NONBLOCK));
 
     for(int i = 4; i < argc; ++i) {
         puts("sending");
